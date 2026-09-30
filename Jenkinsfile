@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JDK17'
-    }
-
     options {
         timestamps()
         disableConcurrentBuilds()
@@ -12,10 +8,8 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = 'docker.io'
-        // Votre nom d'utilisateur Docker Hub configuré ici
-        DOCKER_NAMESPACE = 'marwen24849' 
+        DOCKER_NAMESPACE = 'marwen695' 
         IMAGE_TAG = "${BUILD_NUMBER}"
-        // Assurez-vous que l'ID ici correspond à l'ID créé à l'étape précédente dans Jenkins
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials' 
     }
 
@@ -29,6 +23,8 @@ pipeline {
         stage('Compile') {
             steps {
                 dir('backend') {
+                    // Force l'attribution des droits d'exécution sur le wrapper Maven
+                    sh 'chmod +x ./mvnw'
                     sh './mvnw -B compile'
                 }
             }
@@ -37,6 +33,8 @@ pipeline {
         stage('Generation du livrable') {
             steps {
                 dir('backend') {
+                    // Sécurité additionnelle pour l'étape de packaging
+                    sh 'chmod +x ./mvnw'
                     sh './mvnw -B package -DskipTests'
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
