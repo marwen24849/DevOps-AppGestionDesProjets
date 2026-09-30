@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = 'docker.io'
-        DOCKER_NAMESPACE = 'marwen24849' 
+        DOCKER_NAMESPACE = 'marwen695' 
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials' 
     }
