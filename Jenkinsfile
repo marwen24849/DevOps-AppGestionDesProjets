@@ -23,6 +23,8 @@ pipeline {
         stage('Compile') {
             steps {
                 dir('backend') {
+                    // Force l'attribution des droits d'exécution sur le wrapper Maven
+                    sh 'chmod +x ./mvnw'
                     sh './mvnw -B compile'
                 }
             }
@@ -31,6 +33,8 @@ pipeline {
         stage('Generation du livrable') {
             steps {
                 dir('backend') {
+                    // Sécurité additionnelle pour l'étape de packaging
+                    sh 'chmod +x ./mvnw'
                     sh './mvnw -B package -DskipTests'
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
@@ -73,4 +77,3 @@ pipeline {
         }
     }
 }
-
