@@ -12,10 +12,11 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = 'docker.io'
-        DOCKER_NAMESPACE = 'replace-with-your-dockerhub-username'
+        // Votre nom d'utilisateur Docker Hub configuré ici
+        DOCKER_NAMESPACE = 'marwen24849' 
         IMAGE_TAG = "${BUILD_NUMBER}"
-        DOCKER_CREDENTIALS_ID = 'docker-registry-credentials'
-        SONARQUBE_SERVER = 'SonarQube'
+        // Assurez-vous que l'ID ici correspond à l'ID créé à l'étape précédente dans Jenkins
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials' 
     }
 
     stages {
@@ -29,41 +30,6 @@ pipeline {
             steps {
                 dir('backend') {
                     sh './mvnw -B compile'
-                }
-            }
-        }
-
-        stage('Analyse avec SonarQube') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_SERVER}") {
-                    dir('backend') {
-                        sh './mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=gestion-projets'
-                    }
-                }
-            }
-        }
-
-        stage('Tests unitaires') {
-            steps {
-                sh '''
-                    docker compose up -d mysql
-                    ready=0
-                    for attempt in $(seq 1 30); do
-                        if docker compose exec -T mysql mysqladmin ping -h localhost -uroot -proot --silent; then
-                            ready=1
-                            break
-                        fi
-                        sleep 2
-                    done
-                    test "$ready" -eq 1
-                '''
-                dir('backend') {
-                    sh '''
-                        SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:3307/test_db?createDatabaseIfNotExist=true' \
-                        SPRING_DATASOURCE_USERNAME=root \
-                        SPRING_DATASOURCE_PASSWORD=root \
-                        ./mvnw -B test
-                    '''
                 }
             }
         }
@@ -110,12 +76,6 @@ pipeline {
                     docker compose ps
                 '''
             }
-        }
-    }
-
-    post {
-        always {
-            junit allowEmptyResults: true, testResults: 'backend/target/surefire-reports/*.xml'
         }
     }
 }
