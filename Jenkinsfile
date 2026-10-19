@@ -11,6 +11,7 @@ pipeline {
         DOCKER_NAMESPACE = 'marwen695' 
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials' 
+        KUBECONFIG_CREDENTIALS_ID = 'kubeconfig'
     }
 
     stages {
@@ -66,13 +67,26 @@ pipeline {
             }
         }
 
-        stage('Docker Compose up -d') {
+        stage('Deployment Kubernetes') {
             steps {
-                sh '''
-                    docker compose pull backend frontend
-                    docker compose up -d --no-build
-                    docker compose ps
-                '''
+                withCredentials([file(
+                    credentialsId: "${KUBECONFIG_CREDENTIALS_ID}",
+                    variable: 'KUBECONFIG'
+                )]) {
+                    sh '''
+                        set -eu
+
+                        kubectl apply -f k8s/mysql.yaml
+                        kubectl rollout status deployment/mysql --timeout=180s
+
+                        sed "s|docker.io/marwen695/projet-backend:latest|$DOCKER_REGISTRY/$DOCKER_NAMESPACE/projet-backend:$IMAGE_TAG|g" k8s/backend.yaml | kubectl apply -f -
+                        sed "s|docker.io/marwen695/projet-frontend:latest|$DOCKER_REGISTRY/$DOCKER_NAMESPACE/projet-frontend:$IMAGE_TAG|g" k8s/frontend.yaml | kubectl apply -f -
+
+                        kubectl rollout status deployment/projet-backend --timeout=180s
+                        kubectl rollout status deployment/projet-frontend --timeout=180s
+                        kubectl get services
+                    '''
+                }
             }
         }
     }
